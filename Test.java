@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 public class Test {
 
-    private static String findAnagrams(String[] dictionary) {
+    private static String findAnagrams(String[] dictionary, char tile) {
         ArrayList<Character> hand = new ArrayList<>();
         hand.add('a');
         hand.add('r');
@@ -41,15 +41,14 @@ public class Test {
         hand.add('r');
         hand.add('e');
         hand.add('z');
-        hand.add('s');
+        hand.add(tile);
 
         String bestWord = "";
 
         for (String word : dictionary) {
-            // we found a word!
             if (bestWord.length() != 0) {
                 break;
-            } else if (word.length() <= hand.size()) {
+            } else if (word.length() <= hand.size() && word.indexOf(tile) != -1) {
                 bestWord = word;
                 ArrayList<Character> handCopy = new ArrayList<>(hand);
 
@@ -75,6 +74,6 @@ public class Test {
         String output = input.stream().distinct().sorted((x, y) -> Integer.compare(y.length(), x.length())).collect(Collectors.joining(","));
         String[] dictionary = output.split(",");
 
-        System.out.println(findAnagrams(dictionary));
+        System.out.println(findAnagrams(dictionary, 'o'));
     }
 }
