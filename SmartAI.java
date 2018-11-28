@@ -1,3 +1,31 @@
+/*
+All methods:
+ getSquare - square at location
+ verifyLegality - legality of move
+ getScore - current score
+ getHand - gives you your hand
+ canBeDrawnFromHand - can you play that word with your tiles
+ canBePlacedOnBoard - can this word be played here
+ placeWord - place the word
+ wouldBeConnected - would the word be connected to the others
+ findStartOfWord - start of a word
+ isValidWord - is the word valid with the dictionary
+ isOccupied - is this location occupied
+ wouldCreateOnlyLegalWords - does this word only make legal words
+ scoreWord - score of playing this word
+ score - score of playing word including crosswords
+ play - play the word
+ exchange - exchange tiles
+ removeTiles - return string of tiles removed from hand
+ getCurrentPlayer - current player
+ gameIsOver - is game over?
+ neighbor - tile to the right or below current one
+ antineighbor - tile to the left or above current one
+ opposite - returns opposite of this direction
+ isOnBoard - is this location on the board?
+ playWord - play a word
+*/
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -10,31 +38,16 @@ public class SmartAI implements ScrabbleAI {
         this.gateKeeper = gateKeeper;
     }
 
-    @Override
-    public ScrabbleMove chooseMove() {
-        // start of the game, want to play all of our tiles
-        if (gateKeeper.getSquare(Location.CENTER) == Board.DOUBLE_WORD_SCORE) {
-            return move(true);
-        }
-
-        // what to do the rest of the time
-        else {
-            return move(false);
-        }
-    }
-
-    private String findAnagrams(String[] dictionary) {
+    private String findAnagrams(String[] dictionary, char tile) {
         ArrayList<Character> hand = gateKeeper.getHand();
+        hand.add(tile);
 
         String bestWord = "";
 
         for (String word : dictionary) {
-            // we found a word!
             if (bestWord.length() != 0) {
                 break;
-            }
-
-            else if (word.length() <= hand.size()) {
+            } else if (word.length() <= hand.size() && word.indexOf(tile) != -1) {
                 bestWord = word;
                 ArrayList<Character> handCopy = new ArrayList<>(hand);
 
@@ -45,9 +58,7 @@ public class SmartAI implements ScrabbleAI {
                     if (index == -1) {
                         bestWord = "";
                         break;
-                    }
-
-                    else {
+                    } else {
                         handCopy.remove(index);
                     }
                 }
@@ -56,7 +67,12 @@ public class SmartAI implements ScrabbleAI {
         return bestWord;
     }
 
-    private ScrabbleMove move(boolean first) {
+    private boolean isOccupied(Location location) {
+        return Character.isAlphabetic(gateKeeper.getSquare(location));
+    }
+
+    @Override
+    public ScrabbleMove chooseMove() {
         // Sets up our dictionary
         In in = new In("src/enable1.txt");
         ArrayList<String> input = new ArrayList<>(Arrays.asList(in.readAllLines()));
@@ -64,17 +80,15 @@ public class SmartAI implements ScrabbleAI {
         String[] dictionary = output.split(",");
 
 
-        // gets the best anagram of our letters
-        String word = findAnagrams(dictionary);
+        for (int row = 0; row < Board.WIDTH; row++) {
+            for (int col = 0; col < Board.WIDTH; col++) {
+                Location location = new Location(row, col);
+                if (isOccupied(location)) {
+                    char tile = gateKeeper.getSquare(location);
 
-        // if we're going first
-        if (first) {
-            return new PlayWord(word, Location.CENTER, Location.HORIZONTAL);
-        }
-
-        // need to figure out how to do this...
-        else {
-            return bestMove;
+                    String wordToPlay = findAnagrams(dictionary, tile);
+                }
+            }
         }
     }
 }
