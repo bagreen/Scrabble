@@ -33,6 +33,8 @@ public class SmartAI implements ScrabbleAI {
 
     private GateKeeper gateKeeper;
 
+    private static final boolean[] ALL_TILES = {true, true, true, true, true, true, true};
+
     @Override
     public void setGateKeeper(GateKeeper gateKeeper) {
         this.gateKeeper = gateKeeper;
@@ -87,8 +89,24 @@ public class SmartAI implements ScrabbleAI {
                     char tile = gateKeeper.getSquare(location);
 
                     String wordToPlay = findAnagrams(dictionary, tile);
+                    
+                    try {
+                        gateKeeper.verifyLegality(wordToPlay, location, Location.HORIZONTAL);
+                        return new PlayWord(wordToPlay, location, location.HORIZONTAL);
+                    }
+                    catch (IllegalMoveException e) {
+                        try {
+                            gateKeeper.verifyLegality(wordToPlay, location, Location.VERTICAL);
+                            return new PlayWord(wordToPlay, location, location.VERTICAL);
+                        }
+                        catch (IllegalMoveException f) {
+                            continue;
+                        }
+                    }
                 }
             }
         }
+
+        return new ExchangeTiles(ALL_TILES);
     }
 }
