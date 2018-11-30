@@ -66,7 +66,7 @@ public class ScrabbleTournament {
      */
     public void playMove(Board board, ScrabbleAI player, int playerNumber) throws IllegalMoveException {
         ScrabbleMove move = player.chooseMove();
-        System.out.println(player + " Actual played move: " + move);
+        //System.out.println(player + " Actual played move: " + move);
         move.play(board, playerNumber);
     }
 

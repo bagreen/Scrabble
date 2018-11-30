@@ -59,6 +59,7 @@ public class SmartAI implements ScrabbleAI {
                 if (word.length() <= hand.size() + 1 && tileIndex == 0) {
                     bestWord = word;
                     ArrayList<Character> handCopy = new ArrayList<>(hand);
+                    handCopy.add(tile);
 
                     for (int i = 0; i < word.length(); i++) {
                         int index = handCopy.indexOf(word.charAt(i));
@@ -80,15 +81,16 @@ public class SmartAI implements ScrabbleAI {
 
                     if (bestWord.length() != 0) {
                         //System.out.println("Word: " + bestWord);
-                        StdOut.println("Really before: [" + bestWord + "]");
-                        bestWord = bestWord.substring(0,bestWord.indexOf(tile)) + bestWord.substring(bestWord.indexOf(tile) + 1);
+                        //StdOut.println("Really before: [" + bestWord + "]");
+                        bestWord = bestWord.substring(0,bestWord.indexOf(tile)) + ' ' + bestWord.substring(bestWord.indexOf(tile) + 1);
+                        //System.out.println("After replacement: [" + bestWord + "]");
                         PlayWord newMove = tryHorizontalAndVertical(bestWord, location, bestMove, bestScore);
 
                         if (newMove != bestMove) {
                             bestMove = newMove;
-                            StdOut.println("Before: [" + bestWord + "]");
+                            //StdOut.println("Before: [" + bestWord + "]");
                             chosenWord = bestWord.replace(' ', tile);
-                            StdOut.println("After: [" + chosenWord + "]");
+                            //StdOut.println("After: [" + chosenWord + "]");
                             bestWord = "";
                             break;
                         }
