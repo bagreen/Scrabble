@@ -8,7 +8,7 @@ public class ScrabbleTournament {
         // List contestants here
         players = new ScrabbleAI[] {
           new Incrementalist(),
-          new Incrementalist()
+          new SmartAI()
         };
     }
 
@@ -65,7 +65,9 @@ public class ScrabbleTournament {
      * @param playerNumber Player's place in the game turn order (0 or 1).
      */
     public void playMove(Board board, ScrabbleAI player, int playerNumber) throws IllegalMoveException {
-        player.chooseMove().play(board, playerNumber);
+        ScrabbleMove move = player.chooseMove();
+        System.out.println(player + " Actual played move: " + move);
+        move.play(board, playerNumber);
     }
 
 }

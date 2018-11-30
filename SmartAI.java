@@ -80,12 +80,15 @@ public class SmartAI implements ScrabbleAI {
 
                     if (bestWord.length() != 0) {
                         //System.out.println("Word: " + bestWord);
-                        bestWord = bestWord.replace(tile, ' ');
+                        StdOut.println("Really before: [" + bestWord + "]");
+                        bestWord = bestWord.substring(0,bestWord.indexOf(tile)) + bestWord.substring(bestWord.indexOf(tile) + 1);
                         PlayWord newMove = tryHorizontalAndVertical(bestWord, location, bestMove, bestScore);
 
                         if (newMove != bestMove) {
                             bestMove = newMove;
+                            StdOut.println("Before: [" + bestWord + "]");
                             chosenWord = bestWord.replace(' ', tile);
+                            StdOut.println("After: [" + chosenWord + "]");
                             bestWord = "";
                             break;
                         }
@@ -165,13 +168,14 @@ public class SmartAI implements ScrabbleAI {
         // Sets up our dictionary
         // has dictionary been made yet?
         if (dictionary[0] == null) {
-            In in = new In("src/enable1.txt");
+            In in = new In("enable1.txt");
             ArrayList<String> input = new ArrayList<>(Arrays.asList(in.readAllLines()));
             String output = input.stream().distinct().sorted((x, y) -> Integer.compare(y.length(), x.length())).collect(Collectors.joining(","));
             dictionary = output.split(",");
         }
 
         PlayWord bestMove = findAnagrams(dictionary);
+//        System.out.println(bestMove);
 
         if (bestMove != null) {
             return bestMove;
