@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 public class SmartAI implements ScrabbleAI {
 
     private static final boolean[] ALL_TILES = {true, true, true, true, true, true, true};
+    private static String[] dictionary = new String[172823];
     private GateKeeper gateKeeper;
 
     @Override
@@ -45,36 +46,15 @@ public class SmartAI implements ScrabbleAI {
         ArrayList<Location> placedTiles = findPlacedTiles();
         PlayWord bestMove = null;
         int bestScore = 0;
-
         String chosenWord = "";
-        
-        // is it the first turn?
-        if (gateKeeper.getSquare(Location.CENTER) == Board.DOUBLE_WORD_SCORE) {
-            placedTiles.add(Location.CENTER);
-        }
 
         for (Location location : placedTiles) {
             char tile;
-
-            // is it the first turn?
-            if (gateKeeper.getSquare(Location.CENTER) == Board.DOUBLE_WORD_SCORE) {
-                tile = ' ';
-            }
-            else {
-                tile = gateKeeper.getSquare(location);
-            }
-
+            tile = gateKeeper.getSquare(location);
             //System.out.println("Tile: "+ tile + " at location: " + location.getRow() + ", " + location.getColumn());
-
             String bestWord;
-
             for (String word : dictionary) {
-
                 int tileIndex = word.indexOf(tile);
-
-                if (tile == ' ') {
-                    tileIndex = 0;
-                }
 
                 if (word.length() <= hand.size() + 1 && tileIndex == 0) {
                     bestWord = word;
@@ -183,11 +163,13 @@ public class SmartAI implements ScrabbleAI {
     @Override
     public ScrabbleMove chooseMove() {
         // Sets up our dictionary
-        In in = new In("src/enable1.txt");
-        ArrayList<String> input = new ArrayList<>(Arrays.asList(in.readAllLines()));
-        String output = input.stream().distinct().sorted((x, y) -> Integer.compare(y.length(), x.length())).collect(Collectors.joining(","));
-        String[] dictionary = output.split(",");
-
+        // has dictionary been made yet?
+        if (dictionary[0] == null) {
+            In in = new In("src/enable1.txt");
+            ArrayList<String> input = new ArrayList<>(Arrays.asList(in.readAllLines()));
+            String output = input.stream().distinct().sorted((x, y) -> Integer.compare(y.length(), x.length())).collect(Collectors.joining(","));
+            dictionary = output.split(",");
+        }
 
         PlayWord bestMove = findAnagrams(dictionary);
 
