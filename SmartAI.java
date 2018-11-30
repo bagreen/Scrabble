@@ -56,7 +56,7 @@ public class SmartAI implements ScrabbleAI {
             for (String word : dictionary) {
                 int tileIndex = word.indexOf(tile);
 
-                if (word.length() <= hand.size() + 1 && tileIndex == 0) {
+                if (word.length() <= hand.size() + 1 && tileIndex != -1) {
                     bestWord = word;
                     ArrayList<Character> handCopy = new ArrayList<>(hand);
                     handCopy.add(tile);
@@ -138,25 +138,26 @@ public class SmartAI implements ScrabbleAI {
     private PlayWord tryHorizontalAndVertical(String wordToPlay, Location location, PlayWord bestMove, int bestScore) {
 
         int displace = wordToPlay.indexOf(' ');
-        // new Location(location.getRow(), location.getColumn())
+        Location horizontalLocation = new Location(location.getRow() - displace, location.getColumn());
+        Location verticalLocation = new Location(location.getRow(), location.getColumn() - displace);
 
         try {
-            gateKeeper.verifyLegality(wordToPlay, location, Location.HORIZONTAL);
-            int wordScore = gateKeeper.score(wordToPlay, location, Location.HORIZONTAL);
+            gateKeeper.verifyLegality(wordToPlay, horizontalLocation, Location.HORIZONTAL);
+            int wordScore = gateKeeper.score(wordToPlay, horizontalLocation, Location.HORIZONTAL);
 
             if (wordScore > bestScore) {
-                bestMove = new PlayWord(wordToPlay, location, Location.HORIZONTAL);
+                bestMove = new PlayWord(wordToPlay, horizontalLocation, Location.HORIZONTAL);
             }
         } catch (IllegalMoveException e) {
             // skip!
         }
 
         try {
-            gateKeeper.verifyLegality(wordToPlay, location, Location.VERTICAL);
-            int wordScore = gateKeeper.score(wordToPlay, location, Location.VERTICAL);
+            gateKeeper.verifyLegality(wordToPlay, verticalLocation, Location.VERTICAL);
+            int wordScore = gateKeeper.score(wordToPlay, verticalLocation, Location.VERTICAL);
 
             if (wordScore > bestScore) {
-                bestMove = new PlayWord(wordToPlay, location, Location.VERTICAL);
+                bestMove = new PlayWord(wordToPlay, verticalLocation, Location.VERTICAL);
             }
         } catch (IllegalMoveException e) {
             // skip!
