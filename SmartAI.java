@@ -1,31 +1,3 @@
-/*
-All methods:
- getSquare - square at location
- verifyLegality - legality of move
- getScore - current score
- getHand - gives you your hand
- canBeDrawnFromHand - can you play that word with your tiles
- canBePlacedOnBoard - can this word be played here
- placeWord - place the word
- wouldBeConnected - would the word be connected to the others
- findStartOfWord - start of a word
- isValidWord - is the word valid with the dictionary
- isOccupied - is this location occupied
- wouldCreateOnlyLegalWords - does this word only make legal words
- scoreWord - score of playing this word
- score - score of playing word including crosswords
- play - play the word
- exchange - exchange tiles
- removeTiles - return string of tiles removed from hand
- getCurrentPlayer - current player
- gameIsOver - is game over?
- neighbor - tile to the right or below current one
- antineighbor - tile to the left or above current one
- opposite - returns opposite of this direction
- isOnBoard - is this location on the board?
- playWord - play a word
-*/
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -41,28 +13,30 @@ public class SmartAI implements ScrabbleAI {
         this.gateKeeper = gateKeeper;
     }
 
-    private PlayWord findAnagrams(String[] dictionary) {
+    private PlayWord findWord(String[] dictionary, boolean firstTurn) {
         ArrayList<Character> hand = gateKeeper.getHand();
         ArrayList<Location> placedTiles = findPlacedTiles();
         PlayWord bestMove = null;
         int bestScore = 0;
         String chosenWord = "";
 
+        if (firstTurn) {
+            placedTiles.add(Location.CENTER);
+        }
+
         for (Location location : placedTiles) {
-            char tile;
-            tile = gateKeeper.getSquare(location);
-            //System.out.println("Tile: "+ tile + " at location: " + location.getRow() + ", " + location.getColumn());
+            char tile = gateKeeper.getSquare(location);
+
             for (String word : dictionary) {
                 int tileIndex = word.indexOf(tile);
                 String bestWord;
 
-                if (word.length() <= hand.size() + 1 && tileIndex != -1) {
-                    char[] wordChar = word.toCharArray();
-                    //bestWord = new String(wordChar);
-                    boolean foundWord = true;
-                    boolean foundTile = false;
+                if ((word.length() <= hand.size() + 1 && tileIndex != -1) || (firstTurn && word.length() <= hand.size())) {
                     ArrayList<Character> handCopy = new ArrayList<>(hand);
                     handCopy.add(tile);
+                    char[] wordChar = word.toCharArray();
+                    boolean foundWord = true;
+                    boolean foundTile = false;
 
                     int charIndex = 0;
                     for (char i : wordChar) {
@@ -74,13 +48,11 @@ public class SmartAI implements ScrabbleAI {
                             if (blankIndex != -1) {
                                 handCopy.remove(blankIndex);
                                 wordChar[charIndex] = Character.toUpperCase(i);
-                            }
-                            else {
+                            } else {
                                 foundWord = false;
                                 break;
                             }
-                        }
-                        else if (!foundTile) {
+                        } else if (!foundTile) {
                             if (i == tile) {
                                 wordChar[charIndex] = ' ';
                                 foundTile = true;
@@ -90,26 +62,52 @@ public class SmartAI implements ScrabbleAI {
                         charIndex++;
                     }
 
-                    if (foundWord && foundTile) {
+                    if ((foundWord && foundTile) || (foundWord && firstTurn)) {
                         bestWord = new String(wordChar);
-                        PlayWord newMove = tryHorizontalAndVertical(bestWord, location, bestMove, bestScore);
-                        if (newMove != bestMove) {
-                            bestMove = newMove;
-                            bestScore = newScore(bestWord, location);
-                            chosenWord = bestWord.replace(' ', tile);
-                            break;
+                        int displace = bestWord.indexOf(' ');
+
+                        if (firstTurn) {
+                            displace = 0;
+                        }
+
+                        try {
+                            gateKeeper.verifyLegality(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
+                            int wordScore = gateKeeper.score(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
+
+                            if (wordScore > bestScore) {
+                                bestMove = new PlayWord(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
+                                bestScore = wordScore;
+                                chosenWord = bestWord.replace(' ', tile);
+                                //System.out.println("Chosen word: [" + chosenWord + "]");
+                            }
+                        } catch (IllegalMoveException e) {
+                            // skip!
+                        }
+
+                        try {
+                            gateKeeper.verifyLegality(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
+                            int wordScore = gateKeeper.score(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
+
+                            if (wordScore > bestScore) {
+                                bestMove = new PlayWord(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
+                                bestScore = wordScore;
+                                chosenWord = bestWord.replace(' ', tile);
+                                //System.out.println("Chosen word: [" + chosenWord + "]");
+                            }
+                        } catch (IllegalMoveException e) {
+                            // skip!
                         }
                     }
                 }
             }
         }
 
-        if (chosenWord.length() > 0) System.out.println("Played:" + chosenWord);
-        else System.out.println("Traded in");
-        System.out.print("Hand:");
-        for (char letter : hand) System.out.print(letter + ",");
-        System.out.println();
-        System.out.println();
+//        if (chosenWord.length() > 0) System.out.print("Played: [" + chosenWord + "]");
+//        else System.out.print("Traded in");
+//        System.out.print(", hand: ");
+//        for (char letter : hand) System.out.print(letter + ",");
+//        System.out.println();
+//        System.out.println();
 
         return bestMove;
     }
@@ -117,7 +115,6 @@ public class SmartAI implements ScrabbleAI {
     private boolean isOccupied(Location location) {
         return Character.isAlphabetic(gateKeeper.getSquare(location));
     }
-
     private ArrayList<Location> findPlacedTiles() {
         ArrayList<Location> placedTiles = new ArrayList<>();
 
@@ -133,61 +130,6 @@ public class SmartAI implements ScrabbleAI {
         return placedTiles;
     }
 
-    private int newScore(String wordToPlay, Location location) {
-        int wordScore = 0;
-
-        int displace = wordToPlay.indexOf(' ');
-        Location horizontalLocation = new Location(location.getRow() - displace, location.getColumn());
-        Location verticalLocation = new Location(location.getRow(), location.getColumn() - displace);
-
-        try {
-            gateKeeper.verifyLegality(wordToPlay, horizontalLocation, Location.HORIZONTAL);
-            wordScore = gateKeeper.score(wordToPlay, horizontalLocation, Location.HORIZONTAL);
-        } catch (IllegalMoveException e) {
-            // skip!
-        }
-
-        try {
-            gateKeeper.verifyLegality(wordToPlay, verticalLocation, Location.VERTICAL);
-            wordScore = gateKeeper.score(wordToPlay, verticalLocation, Location.VERTICAL);
-        } catch (IllegalMoveException e) {
-            // skip!
-        }
-
-        return wordScore;
-    }
-
-    private PlayWord tryHorizontalAndVertical(String wordToPlay, Location location, PlayWord bestMove, int bestScore) {
-
-        int displace = wordToPlay.indexOf(' ');
-        Location horizontalLocation = new Location(location.getRow() - displace, location.getColumn());
-        Location verticalLocation = new Location(location.getRow(), location.getColumn() - displace);
-
-        try {
-            gateKeeper.verifyLegality(wordToPlay, horizontalLocation, Location.HORIZONTAL);
-            int wordScore = gateKeeper.score(wordToPlay, horizontalLocation, Location.HORIZONTAL);
-
-            if (wordScore > bestScore) {
-                bestMove = new PlayWord(wordToPlay, horizontalLocation, Location.HORIZONTAL);
-            }
-        } catch (IllegalMoveException e) {
-            // skip!
-        }
-
-        try {
-            gateKeeper.verifyLegality(wordToPlay, verticalLocation, Location.VERTICAL);
-            int wordScore = gateKeeper.score(wordToPlay, verticalLocation, Location.VERTICAL);
-
-            if (wordScore > bestScore) {
-                bestMove = new PlayWord(wordToPlay, verticalLocation, Location.VERTICAL);
-            }
-        } catch (IllegalMoveException e) {
-            // skip!
-        }
-
-        return bestMove;
-    }
-
     @Override
     public ScrabbleMove chooseMove() {
         // has dictionary been made yet?
@@ -199,7 +141,13 @@ public class SmartAI implements ScrabbleAI {
             dictionary = output.split(",");
         }
 
-        PlayWord bestMove = findAnagrams(dictionary);
+        boolean firstTurn = false;
+
+        if (gateKeeper.getSquare(Location.CENTER) == Board.DOUBLE_WORD_SCORE) {
+            firstTurn = true;
+        }
+
+        PlayWord bestMove = findWord(dictionary, firstTurn);
 
         if (bestMove != null) {
             return bestMove;
