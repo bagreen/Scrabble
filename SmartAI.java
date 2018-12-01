@@ -52,64 +52,62 @@ public class SmartAI implements ScrabbleAI {
             char tile;
             tile = gateKeeper.getSquare(location);
             //System.out.println("Tile: "+ tile + " at location: " + location.getRow() + ", " + location.getColumn());
-            String bestWord;
             for (String word : dictionary) {
                 int tileIndex = word.indexOf(tile);
+                String bestWord;
 
                 if (word.length() <= hand.size() + 1 && tileIndex != -1) {
-                    bestWord = word;
+                    char[] wordChar = word.toCharArray();
+                    //bestWord = new String(wordChar);
+                    boolean foundWord = true;
+                    boolean foundTile = false;
                     ArrayList<Character> handCopy = new ArrayList<>(hand);
                     handCopy.add(tile);
 
-                    for (int i = 0; i < word.length(); i++) {
-                        int index = handCopy.indexOf(word.charAt(i));
+                    int charIndex = 0;
+                    for (char i : wordChar) {
+                        int index = handCopy.indexOf(i);
 
-                        // letter is not in word
                         if (index == -1) {
-                            int indexBlank = handCopy.indexOf(' ');
-                            if (indexBlank != -1) {
-                                handCopy.remove(indexBlank);
+                            int blankIndex = handCopy.indexOf(' ');
+
+                            if (blankIndex != -1) {
+                                handCopy.remove(blankIndex);
+                                wordChar[charIndex] = Character.toUpperCase(i);
                             }
                             else {
-                                bestWord = "";
+                                foundWord = false;
                                 break;
                             }
                         }
-
+                        else if (!foundTile) {
+                            if (i == tile) {
+                                wordChar[charIndex] = ' ';
+                                foundTile = true;
+                            }
+                        }
                         handCopy.remove(index);
+                        charIndex++;
                     }
 
-                    if (bestWord.length() != 0) {
-                        //System.out.println("Word: " + bestWord);
-                        //StdOut.println("Really before: [" + bestWord + "]");
-                        bestWord = bestWord.substring(0,bestWord.indexOf(tile)) + ' ' + bestWord.substring(bestWord.indexOf(tile) + 1);
-                        //System.out.println("After replacement: [" + bestWord + "]");
+                    if (foundWord && foundTile) {
+                        bestWord = new String(wordChar);
                         PlayWord newMove = tryHorizontalAndVertical(bestWord, location, bestMove, bestScore);
-
                         if (newMove != bestMove) {
                             bestMove = newMove;
-                            //StdOut.println("Before: [" + bestWord + "]");
+                            bestScore = newScore(bestWord, location);
                             chosenWord = bestWord.replace(' ', tile);
-                            //StdOut.println("After: [" + chosenWord + "]");
-                            bestWord = "";
                             break;
                         }
-                        bestWord = "";
                     }
                 }
             }
         }
 
-        if (chosenWord.length() > 0) {
-            System.out.println("Played:" + chosenWord);
-        }
-        else {
-            System.out.println("Traded in");
-        }
+        if (chosenWord.length() > 0) System.out.println("Played:" + chosenWord);
+        else System.out.println("Traded in");
         System.out.print("Hand:");
-        for (char letter : hand) {
-            System.out.print(letter + ",");
-        }
+        for (char letter : hand) System.out.print(letter + ",");
         System.out.println();
         System.out.println();
 
@@ -133,6 +131,30 @@ public class SmartAI implements ScrabbleAI {
         }
 
         return placedTiles;
+    }
+
+    private int newScore(String wordToPlay, Location location) {
+        int wordScore = 0;
+
+        int displace = wordToPlay.indexOf(' ');
+        Location horizontalLocation = new Location(location.getRow() - displace, location.getColumn());
+        Location verticalLocation = new Location(location.getRow(), location.getColumn() - displace);
+
+        try {
+            gateKeeper.verifyLegality(wordToPlay, horizontalLocation, Location.HORIZONTAL);
+            wordScore = gateKeeper.score(wordToPlay, horizontalLocation, Location.HORIZONTAL);
+        } catch (IllegalMoveException e) {
+            // skip!
+        }
+
+        try {
+            gateKeeper.verifyLegality(wordToPlay, verticalLocation, Location.VERTICAL);
+            wordScore = gateKeeper.score(wordToPlay, verticalLocation, Location.VERTICAL);
+        } catch (IllegalMoveException e) {
+            // skip!
+        }
+
+        return wordScore;
     }
 
     private PlayWord tryHorizontalAndVertical(String wordToPlay, Location location, PlayWord bestMove, int bestScore) {
@@ -168,8 +190,8 @@ public class SmartAI implements ScrabbleAI {
 
     @Override
     public ScrabbleMove chooseMove() {
-        // Sets up our dictionary
         // has dictionary been made yet?
+        // if not, let's set it up
         if (dictionary[0] == null) {
             In in = new In("enable1.txt");
             ArrayList<String> input = new ArrayList<>(Arrays.asList(in.readAllLines()));
@@ -178,7 +200,6 @@ public class SmartAI implements ScrabbleAI {
         }
 
         PlayWord bestMove = findAnagrams(dictionary);
-//        System.out.println(bestMove);
 
         if (bestMove != null) {
             return bestMove;
