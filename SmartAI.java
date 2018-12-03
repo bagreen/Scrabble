@@ -102,6 +102,38 @@ public class SmartAI implements ScrabbleAI {
             }
         }
 
+        if (bestMove == null) {
+            for (Location location : placedTiles) {
+                for (Character letter : hand) {
+                    try {
+                        gateKeeper.verifyLegality(" " + letter, location, Location.HORIZONTAL);
+                        int wordScore = gateKeeper.score(" " + letter, location, Location.HORIZONTAL);
+
+                        if (wordScore > bestScore) {
+                            bestMove = new PlayWord(" " + letter, location, Location.HORIZONTAL);
+                            bestScore = wordScore;
+                        }
+                    } catch (IllegalMoveException e) {
+                        // skip!
+                    }
+
+                    try {
+                        gateKeeper.verifyLegality(" " + letter, location, Location.VERTICAL);
+                        int wordScore = gateKeeper.score(" " + letter, location, Location.VERTICAL);
+
+                        if (wordScore > bestScore) {
+                            bestMove = new PlayWord(" " + letter, location, Location.VERTICAL);
+                            bestScore = wordScore;
+                        }
+                    } catch (IllegalMoveException e) {
+                        // skip!
+                    }
+                }
+            }
+        }
+
+
+
 //        if (chosenWord.length() > 0) System.out.print("Played: [" + chosenWord + "]");
 //        else System.out.print("Traded in");
 //        System.out.print(", hand: ");
