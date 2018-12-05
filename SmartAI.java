@@ -1,5 +1,3 @@
-// fix first turn
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -24,16 +22,22 @@ public class SmartAI implements ScrabbleAI {
         }
 
         for (String word : dictionary) {
-            int wordIndex = word.indexOf(orientationWord);
-            if (!first && ((wordIndex == -1) || (word.length() > orientationWord.length() + hand.size()) || (word.length() <= orientationWord.length()))) {
+            if ((word.length() > orientationWord.length() + hand.size()) || (word.length() <= orientationWord.length())) {
                 continue;
             }
 
             ArrayList<Character> letters = new ArrayList<>(hand);
             char[] wordChar = word.toCharArray();
 
-            for (int i = 0; i < orientationWord.length(); i++) {
-                wordChar[i + wordIndex] = ' ';
+            if (!first) {
+                int wordIndex = word.indexOf(orientationWord);
+                if (wordIndex == -1) {
+                    continue;
+                }
+
+                for (int i = 0; i < orientationWord.length(); i++) {
+                    wordChar[i + wordIndex] = ' ';
+                }
             }
 
             boolean foundWord = true;
@@ -68,6 +72,10 @@ public class SmartAI implements ScrabbleAI {
 //                System.out.println();
                 String bestWord = new String(wordChar);
                 int displace = bestWord.indexOf(' ');
+                
+                if (first) {
+                    displace = 0;
+                }
 
                 if (orientation == Location.HORIZONTAL) {
                     try {
@@ -77,7 +85,6 @@ public class SmartAI implements ScrabbleAI {
                         if (wordScore > bestScore) {
                             bestMove = new PlayWord(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
                             bestScore = wordScore;
-                            //System.out.println("Bestword: [" + bestWord + "]");
                         }
                     } catch (IllegalMoveException e) {
                         // skip!
@@ -91,7 +98,6 @@ public class SmartAI implements ScrabbleAI {
                         if (wordScore > bestScore) {
                             bestMove = new PlayWord(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
                             bestScore = wordScore;
-                            //System.out.println("Bestword: [" + bestWord + "]");
                         }
                     } catch (IllegalMoveException e) {
                         // skip!
