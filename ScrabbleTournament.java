@@ -16,6 +16,9 @@ public class ScrabbleTournament {
         new ScrabbleTournament().run();
     }
 
+    private static int smartavg = 0;
+    private static int incrementavg = 0;
+
     /**
      * Plays two games between each pair of contestants, one with each going first. Prints the number of wins for
      * each contestant (including 0.5 wins for each tie).
@@ -23,7 +26,9 @@ public class ScrabbleTournament {
     public void run() throws IllegalMoveException {
         double[] scores = new double[players.length];
 
-        for (int runs = 0; runs < 50; runs++) {
+        int totalRuns = 100;
+
+        for (int runs = 0; runs < totalRuns / 2; runs++) {
             for (int i = 0; i < players.length; i++) {
                 for (int j = 0; j < players.length; j++) {
                     if (i != j) {
@@ -38,23 +43,10 @@ public class ScrabbleTournament {
         System.out.println();
         System.out.println("Incrementalist: " + scores[0]);
         System.out.println("SmartAI: " + scores[1]);
+        System.out.println();
+        System.out.println("Incrementalist Average: " + (incrementavg / totalRuns));
+        System.out.println("SmartAI Average: " + (smartavg / totalRuns));
     }
-
-//    public void run() throws IllegalMoveException {
-//        double[] scores = new double[players.length];
-//        for (int i = 0; i < players.length; i++) {
-//            for (int j = 0; j < players.length; j++) {
-//                if (i != j) {
-//                    double[] result = playGame(players[i], players[j]);
-//                    scores[i] += result[0];
-//                    scores[j] += result[1];
-//                }
-//            }
-//        }
-//        for (int i = 0; i < players.length; i++) {
-//            StdOut.println(players[i].toString() + ": " + scores[i]);
-//        }
-//    }
 
     /**
      * Plays a game between a (going first) and b. Returns their tournament scores, either {1, 0} (if a wins),
@@ -89,13 +81,14 @@ public class ScrabbleTournament {
             smart = s1;
         }
 
+        incrementavg += increment;
+        smartavg += smart;
+
         if (increment > smart) {
             System.out.println(board);
             System.out.println();
         }
 
-        //StdOut.println("Final score: " + a.toString() + " " + s0 + ", " + b + " " + s1);
-        //StdOut.println();
         if (s0 > s1) {
             return new double[] {1, 0};
         } else if (s0 < s1) {
