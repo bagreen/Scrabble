@@ -14,7 +14,6 @@ public class SmartAI implements ScrabbleAI {
     }
 
     private PlayWord getMove(Location location, String orientationWord, Location orientation, PlayWord bestMove) {
-        ArrayList<Character> hand = gateKeeper.getHand();
         boolean first = false;
 
         if (gateKeeper.getSquare(Location.CENTER) == Board.DOUBLE_WORD_SCORE) {
@@ -22,31 +21,34 @@ public class SmartAI implements ScrabbleAI {
         }
 
         for (String word : dictionary) {
-            if ((word.length() > orientationWord.length() + hand.size()) || (word.length() <= orientationWord.length())) {
+            if ((word.length() > orientationWord.length() + gateKeeper.getHand().size()) || (word.length() <= orientationWord.length())) {
                 continue;
             }
 
-            ArrayList<Character> letters = new ArrayList<>(hand);
+            ArrayList<Character> letters = gateKeeper.getHand();
             char[] wordChar = word.toCharArray();
 
             if (!first) {
                 int wordIndex = word.indexOf(orientationWord);
+
                 if (wordIndex == -1) {
                     continue;
                 }
 
+                // does this need to be in this if statement?
                 for (int i = 0; i < orientationWord.length(); i++) {
                     wordChar[i + wordIndex] = ' ';
                 }
             }
 
-            boolean foundWord = true;
+            boolean validWord = true;
 
             int charIndex = 0;
             for (char i : wordChar) {
                 if (i == ' ') {
                     continue;
                 }
+
                 int index = letters.indexOf(i);
 
                 if (index == -1) {
@@ -57,7 +59,7 @@ public class SmartAI implements ScrabbleAI {
                         wordChar[charIndex] = Character.toUpperCase(i);
                     }
                     else {
-                        foundWord = false;
+                        validWord = false;
                         break;
                     }
                 }
@@ -65,43 +67,37 @@ public class SmartAI implements ScrabbleAI {
                 charIndex++;
             }
 
-            if (foundWord) {
-//                System.out.println("Horizont word: [" + horizontalWord + "]");
-//                System.out.println("Original word: [" + word + "]");
-//                System.out.println("Changed  word: [" + new String(wordChar) + "]");
-//                System.out.println();
+            if (validWord) {
                 String bestWord = new String(wordChar);
-                int displace = bestWord.indexOf(' ');
-                
-                if (first) {
-                    displace = 0;
-                }
+
+                // unclear if this is necessary, more testing needed
+//                if (first) {
+//                    displace = 0;
+//                }
+
+                int displacex = bestWord.indexOf(' ');
+                int displacey = bestWord.indexOf(' ');
 
                 if (orientation == Location.HORIZONTAL) {
-                    try {
-                        gateKeeper.verifyLegality(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
-                        int wordScore = gateKeeper.score(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
-
-                        if (wordScore > bestScore) {
-                            bestMove = new PlayWord(bestWord, new Location(location.getRow() - displace, location.getColumn()), Location.HORIZONTAL);
-                            bestScore = wordScore;
-                        }
-                    } catch (IllegalMoveException e) {
-                        // skip!
-                    }
+                    displacey = 0;
                 }
                 else if (orientation == Location.VERTICAL) {
-                    try {
-                        gateKeeper.verifyLegality(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
-                        int wordScore = gateKeeper.score(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
+                    displacex = 0;
+                }
 
-                        if (wordScore > bestScore) {
-                            bestMove = new PlayWord(bestWord, new Location(location.getRow(), location.getColumn() - displace), Location.VERTICAL);
-                            bestScore = wordScore;
-                        }
-                    } catch (IllegalMoveException e) {
-                        // skip!
+                Location playLocation = new Location(location.getRow() - displacex, location.getColumn() - displacey);
+
+                try {
+                    gateKeeper.verifyLegality(bestWord, playLocation, orientation);
+                    int wordScore = gateKeeper.score(bestWord, playLocation, orientation);
+
+                    if (wordScore > bestScore) {
+                        bestMove = new PlayWord(bestWord, playLocation, orientation);
+                        bestScore = wordScore;
                     }
+                }
+                catch (IllegalMoveException e) {
+                    // skip!
                 }
             }
         }
@@ -172,11 +168,9 @@ public class SmartAI implements ScrabbleAI {
         bestScore = 0;
 
         if (bestMove != null) {
-            //System.out.println("Played move");
             return bestMove;
         }
 
-        //System.out.println("Exchanged");
         return new ExchangeTiles(ALL_TILES);
     }
 }
